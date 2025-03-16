@@ -22,3 +22,11 @@ npm run build
 ```
 
 then go to the dist directory and run the app.
+
+## Screenshots
+
+![Screenshot 1](images/Screenshot%202025-03-16%20at%2020.00.55.png)
+![Screenshot 2](images/Screenshot%202025-03-16%20at%2020.01.13.png)
+![Screenshot 3](images/Screenshot%202025-03-16%20at%2020.01.23.png)
+![Screenshot 4](images/Screenshot%202025-03-16%20at%2020.02.36.png)
+![Screenshot 5](images/Screenshot%202025-03-16%20at%2020.02.46.png)
