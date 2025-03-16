@@ -21,6 +21,16 @@
             font-size: 64px;
             transition: color 0.3s;
             cursor: pointer;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.2;
+        }
+        .pet-icon.emoji-style {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .progress-bar {
             width: 100%;
@@ -135,21 +145,98 @@
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
         }
+        .animation-options,
+        .customization-options {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .style-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .style-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .color-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .color-options label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="color"] {
+            width: 50px;
+            height: 25px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div id="petSelection" class="pet-selection">
         <h2>Choose Your Pet</h2>
         <div class="pet-options">
-            <div class="pet-option" onclick="selectPetType('cat')">
+            <div class="pet-option" data-pet-type="cat">
                 <div style="font-size: 64px;">😺</div>
                 <h3>Cat</h3>
             </div>
-            <div class="pet-option" onclick="selectPetType('dog')">
+            <div class="pet-option" data-pet-type="dog">
                 <div style="font-size: 64px;">🐶</div>
                 <h3>Dog</h3>
             </div>
         </div>
+        
+        <div class="animation-options">
+            <h3>Choose Animation Style</h3>
+            <div class="style-options">
+                <label>
+                    <input type="radio" name="animStyle" value="emoji" checked>
+                    Emoji Style
+                </label>
+                <label>
+                    <input type="radio" name="animStyle" value="ascii">
+                    ASCII Art
+                </label>
+                <label>
+                    <input type="radio" name="animStyle" value="svg">
+                    Modern SVG
+                </label>
+            </div>
+        </div>
+
+        <div class="customization-options" style="display: none;">
+            <h3>Customize Your Pet</h3>
+            <div class="color-options">
+                <label>
+                    Pet Color:
+                    <input type="color" id="petColor" value="#f0f0f0">
+                </label>
+                <label>
+                    Eye Color:
+                    <input type="color" id="eyeColor" value="#000000">
+                </label>
+                <label>
+                    Mouth Color:
+                    <input type="color" id="mouthColor" value="#000000">
+                </label>
+            </div>
+        </div>
+
         <div style="margin-top: 20px;">
             <input type="text" id="petName" class="name-input" placeholder="Enter pet name" maxlength="20">
             <button onclick="createPet()" style="margin-top: 10px;">Create Pet</button>
@@ -217,6 +304,27 @@
         if (window.isDev) {
             document.getElementById('devControls').style.display = 'block';
         }
+
+        // Wait for DOM content to be loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click handlers for pet options
+            document.querySelectorAll('.pet-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const petType = option.getAttribute('data-pet-type');
+                    window.selectPetType(petType);
+                });
+            });
+
+            // Add click handler for create pet button
+            document.querySelector('button[onclick="createPet()"]').addEventListener('click', () => {
+                window.createPet();
+            });
+
+            // Add click handler for new pet button
+            document.querySelector('button[onclick="showPetSelection()"]').addEventListener('click', () => {
+                window.showPetSelection();
+            });
+        });
     </script>
     <script src="pet.js"></script>
 </body>

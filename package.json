@@ -7,7 +7,8 @@
     "start": "electron .",
     "dev": "DEVELOPMENT=true electron .",
     "postinstall": "electron-builder install-app-deps",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder build"
   },
   "author": "",
   "license": "ISC",
@@ -17,5 +18,22 @@
     "electron-builder": "^24.9.1",
     "electron-rebuild": "^3.2.9"
   },
-  "keywords": []
+  "build": {
+    "appId": "com.electron.pet",
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": ["dmg", "zip"],
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "build/icon.png",
+      "category": "Game"
+    }
+  },
+  "keywords": ["virtual pet", "tamagotchi", "electron", "desktop", "game"]
 }
