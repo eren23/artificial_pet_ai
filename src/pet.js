@@ -9,6 +9,7 @@ class Pet {
         this.minValue = 0.0;
         this.devSpeedMultiplier = 1;
         this.animator = null;
+        this.animationStyle = 'emoji';
         
         // Add more stats
         this.stats = {
@@ -244,8 +245,10 @@ class Pet {
             clearInterval(this.deathCheckInterval);
         }
 
-        const checkInterval = this.isDev ? 1000 : 10000; // Check every second in dev, every 10 seconds in prod
-        const deathTime = this.isDev ? 20000 : 14400000; // 20 seconds in dev, 4 hours in prod
+        // Dev mode: check every second, die after 20 seconds
+        // Prod mode: check every minute, die after 1 day (86400000ms)
+        const checkInterval = this.isDev ? 1000 : 60000;
+        const deathTime = this.isDev ? 20000 : 86400000;
 
         this.deathCheckInterval = setInterval(() => {
             if (this.stats.health <= 0) {
@@ -300,14 +303,18 @@ class Pet {
     }
 
     startTimer() {
-        const interval = this.isDev ? 2000 : 300000; // 2 seconds in dev, 5 minutes in prod
+        // Dev mode: 2 seconds
+        // Prod mode: 15 minutes (900000ms) - 50 times slower than current 5 minutes
+        const interval = this.isDev ? 2000 : 900000;
         setInterval(() => this.decreaseStats(true), interval);
     }
 
     decreaseStats(save = true) {
         if (this.death_time) return;
 
-        const baseDecrease = this.isDev ? 0.05 : 0.1;
+        // Dev mode: 0.05 base decrease
+        // Prod mode: 0.002 base decrease (50 times smaller than current 0.1)
+        const baseDecrease = this.isDev ? 0.05 : 0.002;
         const decrease = this.isDev ? (baseDecrease * this.devSpeedMultiplier) : baseDecrease;
         
         // Basic stats decrease
@@ -322,19 +329,19 @@ class Pet {
         let healthChange = 0;
         
         // Health decrease conditions
-        if (this.stats.hunger < 0.2) healthChange -= decrease * 0.5; // Low hunger hurts health
+        if (this.stats.hunger < 0.2) healthChange -= decrease * 0.5;
         if (this.stats.cleanliness < 0.2) healthChange -= decrease * 0.3;
         if (this.stats.happiness < 0.2) healthChange -= decrease * 0.2;
         if (this.stats.exercise < 0.2) healthChange -= decrease * 0.2;
         if (this.stats.energy < 0.2) healthChange -= decrease * 0.3;
         
         // Very limited health regeneration
-        if (this.stats.hunger > 0.8 && // Well fed
-            this.stats.cleanliness > 0.8 && // Very clean
-            this.stats.happiness > 0.8 && // Very happy
-            this.stats.exercise > 0.7 && // Well exercised
-            this.stats.energy > 0.7) { // Well rested
-            healthChange += decrease * 0.1; // Much smaller health regeneration
+        if (this.stats.hunger > 0.8 && 
+            this.stats.cleanliness > 0.8 && 
+            this.stats.happiness > 0.8 && 
+            this.stats.exercise > 0.7 && 
+            this.stats.energy > 0.7) {
+            healthChange += decrease * 0.1;
         }
         
         this.stats.health = Math.max(this.minValue, Math.min(this.maxValue, this.stats.health + healthChange));
