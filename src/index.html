@@ -167,14 +167,32 @@
         .color-options {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .option-group {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .option-group h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
         }
         .color-options label {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #666;
         }
         input[type="color"] {
             width: 50px;
@@ -183,9 +201,39 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            background: none;
         }
-        input[type="radio"] {
+        input[type="range"] {
+            width: 100px;
+            height: 4px;
+            border-radius: 2px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #4CAF50;
             cursor: pointer;
+        }
+        select {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+        }
+        select:hover {
+            border-color: #4CAF50;
+        }
+        .preview-icon.svg-style {
+            transform: scale(1.2);
         }
         .stats-container {
             width: 100%;
@@ -326,18 +374,65 @@
         <div class="customization-options" style="display: none;">
             <h3>Customize Your Pet</h3>
             <div class="color-options">
-                <label>
-                    Pet Color:
-                    <input type="color" id="petColor" value="#f0f0f0">
-                </label>
-                <label>
-                    Eye Color:
-                    <input type="color" id="eyeColor" value="#000000">
-                </label>
-                <label>
-                    Mouth Color:
-                    <input type="color" id="mouthColor" value="#000000">
-                </label>
+                <div class="option-group">
+                    <h4>Basic Colors</h4>
+                    <label>
+                        Main Color:
+                        <input type="color" id="petColor" value="#f0f0f0">
+                    </label>
+                    <label>
+                        Eye Color:
+                        <input type="color" id="eyeColor" value="#000000">
+                    </label>
+                    <label>
+                        Mouth Color:
+                        <input type="color" id="mouthColor" value="#000000">
+                    </label>
+                </div>
+
+                <div class="option-group">
+                    <h4>Additional Features</h4>
+                    <label>
+                        Nose Color:
+                        <input type="color" id="noseColor" value="#ff9999">
+                    </label>
+                    <label>
+                        Inner Ear Color:
+                        <input type="color" id="innerEarColor" value="#ffcccc">
+                    </label>
+                    <label>
+                        Whisker Color:
+                        <input type="color" id="whiskerColor" value="#cccccc">
+                    </label>
+                    <label>
+                        Pattern Color:
+                        <input type="color" id="patternColor" value="#666666">
+                    </label>
+                </div>
+
+                <div class="option-group">
+                    <h4>Style Options</h4>
+                    <label>
+                        Eye Shape:
+                        <select id="eyeShape">
+                            <option value="round">Round</option>
+                            <option value="almond">Almond</option>
+                            <option value="sleepy">Sleepy</option>
+                        </select>
+                    </label>
+                    <label>
+                        Pattern Style:
+                        <select id="patternStyle">
+                            <option value="none">None</option>
+                            <option value="stripes">Stripes</option>
+                            <option value="spots">Spots</option>
+                        </select>
+                    </label>
+                    <label>
+                        Pattern Intensity:
+                        <input type="range" id="patternOpacity" min="0" max="100" value="30">
+                    </label>
+                </div>
             </div>
         </div>
 

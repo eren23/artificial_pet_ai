@@ -62,6 +62,10 @@ const SVG_TEMPLATES = {
                     <stop offset="0%" stop-color="var(--pet-color-light, #ffffff)" />
                     <stop offset="100%" stop-color="var(--pet-color, #f0f0f0)" />
                 </radialGradient>
+                <radialGradient id="noseGradient">
+                    <stop offset="0%" stop-color="var(--nose-color-light, #ffb3b3)" />
+                    <stop offset="100%" stop-color="var(--nose-color, #ff9999)" />
+                </radialGradient>
                 <filter id="softShadow">
                     <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
                     <feOffset dx="0" dy="2" result="offsetblur" />
@@ -73,20 +77,56 @@ const SVG_TEMPLATES = {
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
+                <pattern id="furPattern" width="4" height="4" patternUnits="userSpaceOnUse">
+                    <path d="M 0 0 L 4 4 M 4 0 L 0 4" stroke="var(--pattern-color)" stroke-width="0.5" opacity="0.3"/>
+                </pattern>
             </defs>
             <g class="pet-body" filter="url(#softShadow)">
-                <circle cx="50" cy="50" r="40" fill="url(#bodyGradient)" />
-                <g class="eyes">
-                    <circle cx="35" cy="40" r="8" fill="var(--pet-eye-color, #000)" />
-                    <circle cx="65" cy="40" r="8" fill="var(--pet-eye-color, #000)" />
-                    <circle class="eye-shine" cx="33" cy="38" r="3" fill="#fff" />
-                    <circle class="eye-shine" cx="63" cy="38" r="3" fill="#fff" />
-                </g>
-                <path class="mouth" d="M 45 60 Q 50 65 55 60" stroke="var(--pet-mouth-color, #000)" fill="none" stroke-width="2" stroke-linecap="round" />
+                <!-- Body -->
+                <ellipse cx="50" cy="60" rx="35" ry="30" fill="url(#bodyGradient)" />
+                <circle cx="50" cy="40" r="25" fill="url(#bodyGradient)" />
+                
+                <!-- Fur Pattern -->
+                <ellipse cx="50" cy="60" rx="35" ry="30" fill="url(#furPattern)" />
+                <circle cx="50" cy="40" r="25" fill="url(#furPattern)" />
+                
+                <!-- Ears -->
                 <g class="ears">
-                    <path d="M 20 20 L 35 35" stroke="var(--pet-color, #f0f0f0)" stroke-width="4" stroke-linecap="round" />
-                    <path d="M 80 20 L 65 35" stroke="var(--pet-color, #f0f0f0)" stroke-width="4" stroke-linecap="round" />
+                    <path class="ear left-ear" d="M 30 20 L 40 35 L 25 35 Z" fill="var(--pet-color)" />
+                    <path class="ear right-ear" d="M 70 20 L 75 35 L 60 35 Z" fill="var(--pet-color)" />
+                    <path class="inner-ear" d="M 32 23 L 38 33 L 28 33 Z" fill="var(--inner-ear-color)" opacity="0.5" />
+                    <path class="inner-ear" d="M 68 23 L 72 33 L 62 33 Z" fill="var(--inner-ear-color)" opacity="0.5" />
                 </g>
+                
+                <!-- Face -->
+                <g class="face">
+                    <!-- Eyes -->
+                    <g class="eyes">
+                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <circle class="eye-shine" cx="38" cy="38" r="1.5" fill="#fff" />
+                        <circle class="eye-shine" cx="58" cy="38" r="1.5" fill="#fff" />
+                    </g>
+                    
+                    <!-- Nose -->
+                    <path class="nose" d="M 48 45 L 52 45 L 50 48 Z" fill="url(#noseGradient)" />
+                    
+                    <!-- Mouth -->
+                    <path class="mouth" d="M 45 50 Q 50 53 55 50" stroke="var(--pet-mouth-color)" fill="none" stroke-width="1.5" stroke-linecap="round" />
+                    
+                    <!-- Whiskers -->
+                    <g class="whiskers" stroke="var(--whisker-color)" stroke-width="0.5">
+                        <line x1="30" y1="45" x2="15" y2="40" />
+                        <line x1="30" y1="48" x2="15" y2="48" />
+                        <line x1="30" y1="51" x2="15" y2="56" />
+                        <line x1="70" y1="45" x2="85" y2="40" />
+                        <line x1="70" y1="48" x2="85" y2="48" />
+                        <line x1="70" y1="51" x2="85" y2="56" />
+                    </g>
+                </g>
+                
+                <!-- Tail -->
+                <path class="tail" d="M 80 60 Q 90 50 85 40" stroke="var(--pet-color)" stroke-width="8" fill="none" stroke-linecap="round" />
             </g>
         </svg>`,
         animations: {
@@ -171,6 +211,10 @@ const SVG_TEMPLATES = {
                     <stop offset="0%" stop-color="var(--pet-color-light, #ffffff)" />
                     <stop offset="100%" stop-color="var(--pet-color, #f0f0f0)" />
                 </radialGradient>
+                <radialGradient id="noseGradient">
+                    <stop offset="0%" stop-color="var(--nose-color-light, #333333)" />
+                    <stop offset="100%" stop-color="var(--nose-color, #000000)" />
+                </radialGradient>
                 <filter id="softShadow">
                     <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
                     <feOffset dx="0" dy="2" result="offsetblur" />
@@ -182,23 +226,52 @@ const SVG_TEMPLATES = {
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
+                <pattern id="furPattern" width="4" height="4" patternUnits="userSpaceOnUse">
+                    <path d="M 0 0 L 4 4 M 4 0 L 0 4" stroke="var(--pattern-color)" stroke-width="0.5" opacity="0.3"/>
+                </pattern>
             </defs>
             <g class="pet-body" filter="url(#softShadow)">
-                <circle cx="50" cy="50" r="40" fill="url(#bodyGradient)" />
-                <g class="eyes">
-                    <circle cx="35" cy="40" r="8" fill="var(--pet-eye-color, #000)" />
-                    <circle cx="65" cy="40" r="8" fill="var(--pet-eye-color, #000)" />
-                    <circle class="eye-shine" cx="33" cy="38" r="3" fill="#fff" />
-                    <circle class="eye-shine" cx="63" cy="38" r="3" fill="#fff" />
-                </g>
-                <path class="mouth" d="M 40 60 Q 50 70 60 60" stroke="var(--pet-mouth-color, #000)" fill="none" stroke-width="2" stroke-linecap="round" />
+                <!-- Body -->
+                <ellipse cx="50" cy="65" rx="35" ry="25" fill="url(#bodyGradient)" />
+                <circle cx="50" cy="45" r="30" fill="url(#bodyGradient)" />
+                
+                <!-- Fur Pattern -->
+                <ellipse cx="50" cy="65" rx="35" ry="25" fill="url(#furPattern)" />
+                <circle cx="50" cy="45" r="30" fill="url(#furPattern)" />
+                
+                <!-- Ears -->
                 <g class="ears">
-                    <path d="M 30 20 Q 40 10 50 20" fill="var(--pet-color, #f0f0f0)" />
-                    <path d="M 70 20 Q 60 10 50 20" fill="var(--pet-color, #f0f0f0)" />
+                    <path class="ear left-ear" d="M 25 25 Q 20 15 30 10 Q 40 5 35 25" fill="var(--pet-color)" />
+                    <path class="ear right-ear" d="M 75 25 Q 80 15 70 10 Q 60 5 65 25" fill="var(--pet-color)" />
+                    <path class="inner-ear" d="M 28 22 Q 25 15 32 12" fill="var(--inner-ear-color)" opacity="0.5" />
+                    <path class="inner-ear" d="M 72 22 Q 75 15 68 12" fill="var(--inner-ear-color)" opacity="0.5" />
                 </g>
-                <g class="tail">
-                    <path d="M 85 50 Q 95 45 90 40" stroke="var(--pet-color, #f0f0f0)" stroke-width="4" fill="none" stroke-linecap="round" />
+                
+                <!-- Face -->
+                <g class="face">
+                    <!-- Eyes -->
+                    <g class="eyes">
+                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <circle class="eye-shine" cx="38" cy="38" r="1.5" fill="#fff" />
+                        <circle class="eye-shine" cx="58" cy="38" r="1.5" fill="#fff" />
+                    </g>
+                    
+                    <!-- Nose -->
+                    <ellipse class="nose" cx="50" cy="48" rx="6" ry="4" fill="url(#noseGradient)" />
+                    
+                    <!-- Mouth -->
+                    <path class="mouth" d="M 40 55 Q 50 60 60 55" stroke="var(--pet-mouth-color)" fill="none" stroke-width="1.5" stroke-linecap="round" />
+                    
+                    <!-- Spots (optional) -->
+                    <g class="spots" fill="var(--spot-color)" opacity="0.3">
+                        <circle cx="30" cy="60" r="8" />
+                        <circle cx="70" cy="65" r="6" />
+                    </g>
                 </g>
+                
+                <!-- Tail -->
+                <path class="tail" d="M 80 60 Q 90 55 85 45" stroke="var(--pet-color)" stroke-width="8" fill="none" stroke-linecap="round" />
             </g>
         </svg>`,
         animations: {
@@ -302,22 +375,91 @@ class PetAnimator {
         this.customizations = {
             color: '#f0f0f0',
             eyeColor: '#000000',
-            mouthColor: '#000000'
+            mouthColor: '#000000',
+            noseColor: this.type === 'cat' ? '#ff9999' : '#000000',
+            innerEarColor: '#ffcccc',
+            whiskerColor: '#cccccc',
+            patternColor: '#666666',
+            eyeShape: 'round',
+            patternStyle: 'none',
+            patternOpacity: 0.3
         };
     }
 
     setContainer(container) {
         this.container = container;
+        if (this.container) {
+            // Set appropriate class for the container
+            this.container.className = `pet-icon ${this.style}-style`;
+        }
         this.updateAnimation();
     }
 
     setStyle(style) {
         this.style = style;
+        if (this.container) {
+            this.container.className = `pet-icon ${this.style}-style`;
+        }
         this.updateAnimation();
     }
 
     setCustomizations(customizations) {
         this.customizations = { ...this.customizations, ...customizations };
+        
+        // Update CSS variables
+        if (this.container && this.style === 'svg') {
+            this.container.style.setProperty('--pet-color', this.customizations.color);
+            this.container.style.setProperty('--pet-eye-color', this.customizations.eyeColor);
+            this.container.style.setProperty('--pet-mouth-color', this.customizations.mouthColor);
+            this.container.style.setProperty('--nose-color', this.customizations.noseColor);
+            this.container.style.setProperty('--inner-ear-color', this.customizations.innerEarColor);
+            this.container.style.setProperty('--whisker-color', this.customizations.whiskerColor);
+            this.container.style.setProperty('--pattern-color', this.customizations.patternColor);
+            
+            // Update eye shape
+            const eyes = this.container.querySelectorAll('.eye');
+            if (eyes) {
+                let eyeHeight = 4;
+                switch (this.customizations.eyeShape) {
+                    case 'almond':
+                        eyeHeight = 3;
+                        break;
+                    case 'sleepy':
+                        eyeHeight = 2;
+                        break;
+                }
+                this.container.style.setProperty('--eye-height', eyeHeight);
+            }
+
+            // Update pattern
+            const furPattern = this.container.querySelector('#furPattern');
+            if (furPattern) {
+                furPattern.style.opacity = this.customizations.patternOpacity;
+                switch (this.customizations.patternStyle) {
+                    case 'none':
+                        furPattern.style.display = 'none';
+                        break;
+                    case 'stripes':
+                        furPattern.style.display = 'block';
+                        furPattern.innerHTML = `
+                            <path d="M 0 0 L 4 4 M 4 0 L 0 4" 
+                                stroke="var(--pattern-color)" 
+                                stroke-width="0.5" 
+                                opacity="${this.customizations.patternOpacity}"/>
+                        `;
+                        break;
+                    case 'spots':
+                        furPattern.style.display = 'block';
+                        furPattern.innerHTML = `
+                            <circle cx="2" cy="2" r="1" 
+                                fill="var(--pattern-color)" 
+                                opacity="${this.customizations.patternOpacity}"/>
+                        `;
+                        break;
+                }
+            }
+        }
+        
         this.updateAnimation();
     }
 

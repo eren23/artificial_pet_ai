@@ -547,6 +547,7 @@ function createPet() {
     
     pet.pet_type = selectedPetType;
     pet.name = name;
+    pet.animationStyle = selectedStyle;
     
     // Create animator with selected style using the exposed PetAnimator factory
     const animator = window.PetAnimatorFactory.create(selectedPetType, selectedStyle);
@@ -556,13 +557,32 @@ function createPet() {
     }
     pet.animator = animator;
     
-    // Apply customizations if using SVG style
+    // Show pet container first so the elements exist
+    pet.setInitialStats();
+    pet.showPetContainer();
+    
+    // Set the container for the animator
+    const petIcon = document.getElementById('petIcon');
+    if (petIcon) {
+        petIcon.textContent = ''; // Clear any existing content
+        petIcon.className = `pet-icon ${selectedStyle}-style`;
+        animator.setContainer(petIcon);
+    }
+    
+    // Apply all customizations if using SVG style
     if (selectedStyle === 'svg') {
         try {
-            pet.animator.setCustomizations({
-                color: document.getElementById('petColor').value || '#f0f0f0',
-                eyeColor: document.getElementById('eyeColor').value || '#000000',
-                mouthColor: document.getElementById('mouthColor').value || '#000000'
+            animator.setCustomizations({
+                color: document.getElementById('petColor').value,
+                eyeColor: document.getElementById('eyeColor').value,
+                mouthColor: document.getElementById('mouthColor').value,
+                noseColor: document.getElementById('noseColor').value,
+                innerEarColor: document.getElementById('innerEarColor').value,
+                whiskerColor: document.getElementById('whiskerColor').value,
+                patternColor: document.getElementById('patternColor').value,
+                eyeShape: document.getElementById('eyeShape').value,
+                patternStyle: document.getElementById('patternStyle').value,
+                patternOpacity: document.getElementById('patternOpacity').value / 100
             });
         } catch (error) {
             console.error('Error setting customizations:', error);
@@ -571,14 +591,24 @@ function createPet() {
     
     // Initialize the animation
     try {
-        pet.animator.setState('idle');
-        pet.animator.updateAnimation();
+        animator.setState('idle');
+        animator.updateAnimation();
+        
+        // Start animation loop for ASCII and SVG styles
+        if (selectedStyle === 'ascii' || selectedStyle === 'svg') {
+            if (window.petAnimationInterval) {
+                clearInterval(window.petAnimationInterval);
+            }
+            window.petAnimationInterval = setInterval(() => {
+                if (animator) {
+                    animator.updateAnimation();
+                }
+            }, 500);
+        }
     } catch (error) {
         console.error('Error initializing animation:', error);
     }
     
-    pet.setInitialStats();
-    pet.showPetContainer();
     pet.saveState();
 }
 
@@ -620,12 +650,71 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add event listeners for color customization
-    ['petColor', 'eyeColor', 'mouthColor'].forEach(id => {
+    ['petColor', 'eyeColor', 'mouthColor', 'noseColor', 'innerEarColor', 'whiskerColor', 'patternColor'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
-            input.addEventListener('input', updatePreview);
+            input.addEventListener('input', () => {
+                if (previewAnimator) {
+                    previewAnimator.setCustomizations({
+                        color: document.getElementById('petColor').value,
+                        eyeColor: document.getElementById('eyeColor').value,
+                        mouthColor: document.getElementById('mouthColor').value,
+                        noseColor: document.getElementById('noseColor').value,
+                        innerEarColor: document.getElementById('innerEarColor').value,
+                        whiskerColor: document.getElementById('whiskerColor').value,
+                        patternColor: document.getElementById('patternColor').value,
+                        eyeShape: document.getElementById('eyeShape').value,
+                        patternStyle: document.getElementById('patternStyle').value,
+                        patternOpacity: document.getElementById('patternOpacity').value / 100
+                    });
+                }
+            });
         }
     });
+
+    // Add event listeners for style options
+    ['eyeShape', 'patternStyle'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.addEventListener('change', () => {
+                if (previewAnimator) {
+                    previewAnimator.setCustomizations({
+                        color: document.getElementById('petColor').value,
+                        eyeColor: document.getElementById('eyeColor').value,
+                        mouthColor: document.getElementById('mouthColor').value,
+                        noseColor: document.getElementById('noseColor').value,
+                        innerEarColor: document.getElementById('innerEarColor').value,
+                        whiskerColor: document.getElementById('whiskerColor').value,
+                        patternColor: document.getElementById('patternColor').value,
+                        eyeShape: document.getElementById('eyeShape').value,
+                        patternStyle: document.getElementById('patternStyle').value,
+                        patternOpacity: document.getElementById('patternOpacity').value / 100
+                    });
+                }
+            });
+        }
+    });
+
+    // Add event listener for pattern opacity
+    const patternOpacity = document.getElementById('patternOpacity');
+    if (patternOpacity) {
+        patternOpacity.addEventListener('input', () => {
+            if (previewAnimator) {
+                previewAnimator.setCustomizations({
+                    color: document.getElementById('petColor').value,
+                    eyeColor: document.getElementById('eyeColor').value,
+                    mouthColor: document.getElementById('mouthColor').value,
+                    noseColor: document.getElementById('noseColor').value,
+                    innerEarColor: document.getElementById('innerEarColor').value,
+                    whiskerColor: document.getElementById('whiskerColor').value,
+                    patternColor: document.getElementById('patternColor').value,
+                    eyeShape: document.getElementById('eyeShape').value,
+                    patternStyle: document.getElementById('patternStyle').value,
+                    patternOpacity: document.getElementById('patternOpacity').value / 100
+                });
+            }
+        });
+    }
 
     // Add event listener for pet termination
     if (window.electron) {
