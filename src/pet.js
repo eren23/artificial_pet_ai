@@ -19,6 +19,9 @@ class Pet {
         setTimeout(() => {
             this.init();
         }, 100);
+
+        // Add animation cooldown
+        this.isAnimating = false;
     }
 
     async init() {
@@ -85,24 +88,41 @@ class Pet {
         }
     }
 
-    feed() {
+    async animate(animation) {
+        if (this.isAnimating) return;
+        
+        const petIcon = document.getElementById('petIcon');
+        this.isAnimating = true;
+        
+        petIcon.classList.add(animation);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        petIcon.classList.remove(animation);
+        
+        this.isAnimating = false;
+    }
+
+    async feed() {
+        await this.animate('bounce');
         this.hunger = Math.max(this.minValue, Math.min(this.maxValue, this.hunger - 0.3));
         this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
         this.updateUI();
     }
 
-    pet() {
+    async pet() {
+        await this.animate('pulse');
         this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.2));
         this.updateUI();
     }
 
-    clean() {
+    async clean() {
+        await this.animate('shake');
         this.cleanliness = this.maxValue;
         this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
         this.updateUI();
     }
 
-    wash() {
+    async wash() {
+        await this.animate('spin');
         this.cleanliness = this.maxValue;
         this.health = Math.max(this.minValue, Math.min(this.maxValue, this.health + 0.2));
         this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
@@ -176,7 +196,35 @@ class Pet {
                 `Cleanliness: ${this.cleanliness.toFixed(2)}\n` +
                 `Health: ${this.health.toFixed(2)}`;
         }
+
+        // Add smooth color transitions for the bars
+        const happinessBar = document.getElementById('happinessBar');
+        const hungerBar = document.getElementById('hungerBar');
+        const cleanlinessBar = document.getElementById('cleanlinessBar');
+        const healthBar = document.getElementById('healthBar');
+
+        // Update colors based on values
+        happinessBar.style.background = `linear-gradient(90deg, 
+            ${this.happiness > 0.5 ? '#4CAF50' : '#ff9800'}, 
+            ${this.happiness > 0.7 ? '#45a049' : '#f57c00'})`;
+        
+        hungerBar.style.background = `linear-gradient(90deg, 
+            ${this.hunger < 0.5 ? '#4CAF50' : '#ff9800'}, 
+            ${this.hunger < 0.3 ? '#45a049' : '#f57c00'})`;
+        
+        cleanlinessBar.style.background = `linear-gradient(90deg, 
+            ${this.cleanliness > 0.5 ? '#4CAF50' : '#ff9800'}, 
+            ${this.cleanliness > 0.7 ? '#45a049' : '#f57c00'})`;
+        
+        healthBar.style.background = `linear-gradient(90deg, 
+            ${this.health > 0.5 ? '#4CAF50' : '#ff9800'}, 
+            ${this.health > 0.7 ? '#45a049' : '#f57c00'})`;
     }
 }
 
-const pet = new Pet(); 
+const pet = new Pet();
+
+// Add click animation to pet icon
+document.getElementById('petIcon').addEventListener('click', () => {
+    pet.pet();
+}); 

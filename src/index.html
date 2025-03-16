@@ -20,6 +20,7 @@
         .pet-icon {
             font-size: 64px;
             transition: color 0.3s;
+            cursor: pointer;
         }
         .progress-bar {
             width: 100%;
@@ -30,8 +31,24 @@
         }
         .progress-bar-fill {
             height: 100%;
-            background: #4CAF50;
-            transition: width 0.3s;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transition: width 0.3s ease-out;
+            position: relative;
+        }
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0.1) 0%,
+                rgba(255,255,255,0.2) 50%,
+                rgba(255,255,255,0.1) 100%
+            );
+            animation: shine 2s infinite linear;
         }
         .buttons {
             display: flex;
@@ -47,6 +64,36 @@
         }
         button:hover {
             background: #45a049;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .bounce { animation: bounce 0.5s ease; }
+        .shake { animation: shake 0.5s ease; }
+        .spin { animation: spin 0.5s ease; }
+        .pulse { animation: pulse 0.5s ease; }
+        .pet-icon:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
     </style>
 </head>
