@@ -88,10 +88,12 @@
         }
         .pet-option {
             cursor: pointer;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             background: #f5f5f5;
             transition: all 0.3s;
+            min-width: 100px;
+            text-align: center;
         }
         .pet-option:hover {
             background: #e0e0e0;
@@ -185,18 +187,120 @@
         input[type="radio"] {
             cursor: pointer;
         }
+        .stats-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-group {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat-group h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .stat-item {
+            margin-bottom: 10px;
+        }
+        .stat-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .activities-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .activity-group {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .activity-group h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .pet-preview {
+            width: 100%;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            background: #f5f5f5;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-icon {
+            font-size: 64px;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-icon.ascii-style {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.2;
+            font-size: 16px;
+        }
+        .preview-icon.svg-style {
+            width: 100px;
+            height: 100px;
+        }
+        .preview-icon.svg-style svg {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
     <div id="petSelection" class="pet-selection">
         <h2>Choose Your Pet</h2>
+        <div class="pet-preview" id="petPreview">
+            <div id="previewIcon" class="pet-icon preview-icon">❓</div>
+        </div>
         <div class="pet-options">
             <div class="pet-option" data-pet-type="cat">
-                <div style="font-size: 64px;">😺</div>
+                <div style="font-size: 48px;">😺</div>
                 <h3>Cat</h3>
             </div>
             <div class="pet-option" data-pet-type="dog">
-                <div style="font-size: 64px;">🐶</div>
+                <div style="font-size: 48px;">🐶</div>
                 <h3>Dog</h3>
             </div>
         </div>
@@ -247,33 +351,83 @@
         <div id="petIcon" class="pet-icon">🐱</div>
         <h3 id="petNameDisplay"></h3>
         
-        <div style="width: 100%;">
-            <p>Happiness</p>
-            <div class="progress-bar">
-                <div id="happinessBar" class="progress-bar-fill"></div>
+        <div class="stats-container">
+            <div class="stat-group">
+                <h4>Basic Needs</h4>
+                <div class="stat-item">
+                    <p>Hunger</p>
+                    <div class="progress-bar">
+                        <div id="hungerBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <p>Energy</p>
+                    <div class="progress-bar">
+                        <div id="energyBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <p>Cleanliness</p>
+                    <div class="progress-bar">
+                        <div id="cleanlinessBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
             </div>
-            
-            <p>Hunger</p>
-            <div class="progress-bar">
-                <div id="hungerBar" class="progress-bar-fill"></div>
-            </div>
-            
-            <p>Cleanliness</p>
-            <div class="progress-bar">
-                <div id="cleanlinessBar" class="progress-bar-fill"></div>
-            </div>
-            
-            <p>Health</p>
-            <div class="progress-bar">
-                <div id="healthBar" class="progress-bar-fill"></div>
+
+            <div class="stat-group">
+                <h4>Wellness</h4>
+                <div class="stat-item">
+                    <p>Health</p>
+                    <div class="progress-bar">
+                        <div id="healthBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <p>Happiness</p>
+                    <div class="progress-bar">
+                        <div id="happinessBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <p>Exercise</p>
+                    <div class="progress-bar">
+                        <div id="exerciseBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <p>Social</p>
+                    <div class="progress-bar">
+                        <div id="socialBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="buttons">
-            <button onclick="pet.feed()">Feed</button>
-            <button onclick="pet.pet()">Pet</button>
-            <button onclick="pet.clean()">Clean</button>
-            <button onclick="pet.wash()">Wash</button>
+        <div class="activities-container">
+            <div class="activity-group">
+                <h4>Basic Care</h4>
+                <div class="buttons">
+                    <button onclick="pet.performActivity('feed')">Feed</button>
+                    <button onclick="pet.performActivity('clean')">Groom</button>
+                    <button onclick="pet.performActivity('nap')">Nap</button>
+                </div>
+            </div>
+
+            <div class="activity-group">
+                <h4>Fun & Exercise</h4>
+                <div class="buttons">
+                    <button onclick="pet.performActivity('play')">Play</button>
+                    <button onclick="pet.performActivity('exercise')">Exercise</button>
+                    <button onclick="pet.performActivity('pet')">Pet</button>
+                </div>
+            </div>
+
+            <div class="activity-group">
+                <h4>Special Care</h4>
+                <div class="buttons">
+                    <button onclick="pet.performActivity('care')">Care</button>
+                </div>
+            </div>
         </div>
     </div>
 

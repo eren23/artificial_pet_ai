@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, Tray, nativeImage, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.DEVELOPMENT === 'true';
@@ -6,6 +6,7 @@ const isDev = process.env.DEVELOPMENT === 'true';
 let tray = null;
 let window = null;
 let storePath = null;
+let trayContextMenu = null;
 
 // Simple file-based storage
 function initStorage() {
@@ -29,12 +30,95 @@ function initStorage() {
     }
 }
 
+function createTrayMenu() {
+    return Menu.buildFromTemplate([
+        { 
+            label: 'Show Pet',
+            click: () => {
+                window.show();
+                window.focus();
+            }
+        },
+        { type: 'separator' },
+        {
+            label: 'Pet Status',
+            submenu: [
+                { label: 'Happy', enabled: false },
+                { label: 'Healthy', enabled: false },
+                { label: 'Clean', enabled: false }
+            ]
+        },
+        { type: 'separator' },
+        {
+            label: 'Quick Actions',
+            submenu: [
+                { 
+                    label: 'Feed Pet',
+                    click: () => window.webContents.send('quick-action', 'feed')
+                },
+                { 
+                    label: 'Pet',
+                    click: () => window.webContents.send('quick-action', 'pet')
+                },
+                { 
+                    label: 'Care',
+                    click: () => window.webContents.send('quick-action', 'care')
+                }
+            ]
+        },
+        { type: 'separator' },
+        {
+            label: 'Settings',
+            submenu: [
+                { 
+                    label: 'Notifications',
+                    type: 'checkbox',
+                    checked: true,
+                    click: (menuItem) => window.webContents.send('toggle-notifications', menuItem.checked)
+                },
+                { type: 'separator' },
+                { 
+                    label: 'Reset Pet',
+                    click: () => {
+                        window.webContents.send('reset-pet');
+                        window.show();
+                    }
+                },
+                { type: 'separator' },
+                {
+                    label: 'Give Up Pet',
+                    click: () => {
+                        window.webContents.send('terminate-pet');
+                        window.show();
+                    }
+                }
+            ]
+        },
+        { type: 'separator' },
+        { 
+            label: 'Quit',
+            click: () => app.quit()
+        }
+    ]);
+}
+
 app.whenReady().then(() => {
     initStorage();
     
     // Create the tray icon
     const icon = nativeImage.createFromNamedImage('NSImageNameStatusAvailable', [-1]);
     tray = new Tray(icon);
+
+    // Create and store context menu
+    trayContextMenu = createTrayMenu();
+    tray.setContextMenu(trayContextMenu);
+
+    // Update menu status periodically
+    setInterval(() => {
+        if (window && window.webContents) {
+            window.webContents.send('request-status-update');
+        }
+    }, 10000); // Update every 10 seconds
 
     // Create the browser window
     window = new BrowserWindow({
@@ -136,4 +220,17 @@ ipcMain.handle('save-state', (event, state) => {
         console.error('Error saving state:', error);
         return false;
     }
+});
+
+// Add IPC handlers for status updates
+ipcMain.on('status-update', (event, status) => {
+    // Create a new menu with updated status
+    const statusSubmenu = trayContextMenu.items[2].submenu;
+    
+    statusSubmenu.items[0].label = `Happiness: ${Math.round(status.happiness * 100)}%`;
+    statusSubmenu.items[1].label = `Health: ${Math.round(status.health * 100)}%`;
+    statusSubmenu.items[2].label = `Cleanliness: ${Math.round(status.cleanliness * 100)}%`;
+    
+    // Update the tray's context menu
+    tray.setContextMenu(trayContextMenu);
 }); 

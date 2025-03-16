@@ -1,6 +1,7 @@
 // Pet selection and creation functions
 let selectedPetType = null;
 let selectedStyle = 'emoji';
+let previewAnimator = null;
 
 class Pet {
     constructor() {
@@ -8,24 +9,85 @@ class Pet {
         this.minValue = 0.0;
         this.devSpeedMultiplier = 1;
         this.animator = null;
-        this.faces = {
-            cat: {
-                happy: '😺',
-                neutral: '😸',
-                sad: '😿',
-                sick: '🙀',
-                hungry: '😾',
-                dirty: '🐱',
-                dead: '💀'
+        
+        // Add more stats
+        this.stats = {
+            happiness: 0.5,
+            hunger: 0.5,
+            cleanliness: 1.0,
+            health: 1.0,
+            energy: 1.0,
+            social: 0.5,
+            exercise: 0.5
+        };
+
+        this.activities = {
+            feed: {
+                name: 'Feed',
+                effects: {
+                    hunger: -0.3,
+                    happiness: +0.1,
+                    energy: +0.2
+                },
+                animation: 'bounce'
             },
-            dog: {
-                happy: '🐶',
-                neutral: '🐕',
-                sad: '🐕',
-                sick: '🤒',
-                hungry: '🐕',
-                dirty: '🦮',
-                dead: '💀'
+            pet: {
+                name: 'Pet',
+                effects: {
+                    happiness: +0.2,
+                    social: +0.2,
+                    stress: -0.1
+                },
+                animation: 'pulse'
+            },
+            play: {
+                name: 'Play',
+                effects: {
+                    happiness: +0.3,
+                    energy: -0.2,
+                    exercise: +0.3,
+                    social: +0.2,
+                    hunger: +0.1
+                },
+                animation: 'bounce'
+            },
+            clean: {
+                name: 'Groom',
+                effects: {
+                    cleanliness: +0.4,
+                    happiness: +0.1,
+                    social: +0.1
+                },
+                animation: 'shake'
+            },
+            nap: {
+                name: 'Nap',
+                effects: {
+                    energy: +0.5,
+                    health: +0.1,
+                    hunger: +0.2
+                },
+                animation: 'pulse'
+            },
+            exercise: {
+                name: 'Exercise',
+                effects: {
+                    exercise: +0.3,
+                    energy: -0.2,
+                    health: +0.2,
+                    hunger: +0.2,
+                    cleanliness: -0.1
+                },
+                animation: 'shake'
+            },
+            care: {
+                name: 'Care',
+                effects: {
+                    health: +0.3,
+                    cleanliness: +0.2,
+                    happiness: +0.2
+                },
+                animation: 'spin'
             }
         };
         
@@ -37,9 +99,19 @@ class Pet {
             this.init();
         }, 100);
 
-        // Add animation cooldown
         this.isAnimating = false;
         this.deathCheckInterval = null;
+
+        // Add event listeners for quick actions
+        if (window.electron) {
+            window.electron.ipcRenderer.on('quick-action', (action) => {
+                this.performActivity(action);
+            });
+
+            window.electron.ipcRenderer.on('request-status-update', () => {
+                window.electron.ipcRenderer.send('status-update', this.stats);
+            });
+        }
     }
 
     async init() {
@@ -77,11 +149,12 @@ class Pet {
 
                 this.pet_type = state.pet_type;
                 this.name = state.name;
-                this.happiness = state.happiness;
-                this.hunger = state.hunger;
-                this.cleanliness = state.cleanliness;
-                this.health = state.health;
                 this.death_time = state.death_time;
+                
+                // Load all stats from saved state or use defaults
+                if (state.stats) {
+                    this.stats = state.stats;
+                }
                 
                 // Calculate stat decreases since last save
                 const timePassed = (Date.now() - state.last_updated) / 1000;
@@ -91,10 +164,13 @@ class Pet {
                     const decrease = this.isDev ? (0.1 * this.devSpeedMultiplier) : 0.1;
                     const totalDecrease = decrease * decreases;
                     
-                    this.happiness = Math.max(this.minValue, this.happiness - totalDecrease);
-                    this.hunger = Math.min(this.maxValue, this.hunger + totalDecrease);
-                    this.cleanliness = Math.max(this.minValue, this.cleanliness - totalDecrease);
-                    this.health = Math.max(this.minValue, Math.min(this.maxValue, this.health - (totalDecrease * 0.5)));
+                    Object.keys(this.stats).forEach(stat => {
+                        if (stat === 'hunger') {
+                            this.stats[stat] = Math.min(this.maxValue, this.stats[stat] + totalDecrease);
+                        } else {
+                            this.stats[stat] = Math.max(this.minValue, this.stats[stat] - totalDecrease);
+                        }
+                    });
                 }
 
                 // Check if pet was dead
@@ -113,18 +189,16 @@ class Pet {
     setDefaultState() {
         this.pet_type = null;
         this.name = null;
-        this.happiness = 0.5;
-        this.hunger = 0.5;
-        this.cleanliness = 1.0;
-        this.health = 1.0;
+        Object.keys(this.stats).forEach(stat => {
+            this.stats[stat] = stat === 'cleanliness' || stat === 'health' ? 1.0 : 0.5;
+        });
         this.death_time = null;
     }
 
     setInitialStats() {
-        this.happiness = 1.0;
-        this.hunger = 0.0;
-        this.cleanliness = 1.0;
-        this.health = 1.0;
+        Object.keys(this.stats).forEach(stat => {
+            this.stats[stat] = 1.0;
+        });
         this.death_time = null;
     }
 
@@ -133,11 +207,9 @@ class Pet {
             await window.electron.ipcRenderer.invoke('save-state', {
                 pet_type: this.pet_type,
                 name: this.name,
-                happiness: this.happiness,
-                hunger: this.hunger,
-                cleanliness: this.cleanliness,
-                health: this.health,
-                death_time: this.death_time
+                stats: this.stats,
+                death_time: this.death_time,
+                last_updated: Date.now()
             });
         } catch (error) {
             console.error('Error saving state:', error);
@@ -173,10 +245,10 @@ class Pet {
         }
 
         const checkInterval = this.isDev ? 1000 : 10000; // Check every second in dev, every 10 seconds in prod
-        const deathTime = this.isDev ? 10000 : 7200000; // 10 seconds in dev, 2 hours in prod
+        const deathTime = this.isDev ? 20000 : 14400000; // 20 seconds in dev, 4 hours in prod
 
         this.deathCheckInterval = setInterval(() => {
-            if (this.health <= 0) {
+            if (this.stats.health <= 0) {
                 if (!this.death_time) {
                     this.death_time = Date.now();
                     this.saveState();
@@ -207,38 +279,22 @@ class Pet {
         this.isAnimating = false;
     }
 
-    async feed() {
-        if (this.death_time) return;
-        await this.animate('bounce');
-        this.hunger = Math.max(this.minValue, Math.min(this.maxValue, this.hunger - 0.3));
-        this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
-        this.updateUI();
-        this.saveState();
-    }
+    async performActivity(activityName) {
+        if (this.death_time || this.isAnimating) return;
 
-    async pet() {
-        if (this.death_time) return;
-        await this.animate('pulse');
-        this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.2));
-        this.updateUI();
-        this.saveState();
-    }
+        const activity = this.activities[activityName];
+        if (!activity) return;
 
-    async clean() {
-        if (this.death_time) return;
-        await this.animate('shake');
-        this.cleanliness = this.maxValue;
-        this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
-        this.updateUI();
-        this.saveState();
-    }
+        // Perform animation
+        await this.animate(activity.animation);
 
-    async wash() {
-        if (this.death_time) return;
-        await this.animate('spin');
-        this.cleanliness = this.maxValue;
-        this.health = Math.max(this.minValue, Math.min(this.maxValue, this.health + 0.2));
-        this.happiness = Math.max(this.minValue, Math.min(this.maxValue, this.happiness + 0.1));
+        // Apply effects
+        Object.entries(activity.effects).forEach(([stat, change]) => {
+            if (this.stats[stat] !== undefined) {
+                this.stats[stat] = Math.max(this.minValue, Math.min(this.maxValue, this.stats[stat] + change));
+            }
+        });
+
         this.updateUI();
         this.saveState();
     }
@@ -251,40 +307,37 @@ class Pet {
     decreaseStats(save = true) {
         if (this.death_time) return;
 
-        // Reduce base decrease amount in dev mode
         const baseDecrease = this.isDev ? 0.05 : 0.1;
         const decrease = this.isDev ? (baseDecrease * this.devSpeedMultiplier) : baseDecrease;
         
-        // Basic stats decrease over time
-        this.happiness = Math.max(this.minValue, this.happiness - decrease);
-        this.hunger = Math.min(this.maxValue, this.hunger + decrease);
-        this.cleanliness = Math.max(this.minValue, this.cleanliness - decrease);
+        // Basic stats decrease
+        this.stats.happiness = Math.max(this.minValue, this.stats.happiness - decrease);
+        this.stats.hunger = Math.max(this.minValue, this.stats.hunger - decrease * 0.5);
+        this.stats.cleanliness = Math.max(this.minValue, this.stats.cleanliness - decrease);
+        this.stats.energy = Math.max(this.minValue, this.stats.energy - decrease * 0.5);
+        this.stats.social = Math.max(this.minValue, this.stats.social - decrease);
+        this.stats.exercise = Math.max(this.minValue, this.stats.exercise - decrease);
         
-        // Health system that depends on other stats
+        // Complex health system - reworked
         let healthChange = 0;
         
-        // Health decreases when hunger is high (> 0.7)
-        if (this.hunger > 0.7) {
-            healthChange -= (this.hunger - 0.7) * decrease;
+        // Health decrease conditions
+        if (this.stats.hunger < 0.2) healthChange -= decrease * 0.5; // Low hunger hurts health
+        if (this.stats.cleanliness < 0.2) healthChange -= decrease * 0.3;
+        if (this.stats.happiness < 0.2) healthChange -= decrease * 0.2;
+        if (this.stats.exercise < 0.2) healthChange -= decrease * 0.2;
+        if (this.stats.energy < 0.2) healthChange -= decrease * 0.3;
+        
+        // Very limited health regeneration
+        if (this.stats.hunger > 0.8 && // Well fed
+            this.stats.cleanliness > 0.8 && // Very clean
+            this.stats.happiness > 0.8 && // Very happy
+            this.stats.exercise > 0.7 && // Well exercised
+            this.stats.energy > 0.7) { // Well rested
+            healthChange += decrease * 0.1; // Much smaller health regeneration
         }
         
-        // Health decreases when cleanliness is low (< 0.3)
-        if (this.cleanliness < 0.3) {
-            healthChange -= (0.3 - this.cleanliness) * decrease;
-        }
-        
-        // Health decreases when happiness is very low (< 0.2)
-        if (this.happiness < 0.2) {
-            healthChange -= (0.2 - this.happiness) * decrease * 0.5;
-        }
-        
-        // Health slowly regenerates when all conditions are good
-        if (this.hunger < 0.5 && this.cleanliness > 0.7 && this.happiness > 0.7) {
-            healthChange += decrease * 0.25;
-        }
-        
-        // Apply health change with limits
-        this.health = Math.max(this.minValue, Math.min(this.maxValue, this.health + healthChange));
+        this.stats.health = Math.max(this.minValue, Math.min(this.maxValue, this.stats.health + healthChange));
         
         if (save) {
             this.saveState();
@@ -329,27 +382,27 @@ class Pet {
     }
 
     updateUI() {
-        // Ensure we have values before updating UI
-        if (typeof this.happiness === 'undefined') {
+        // Only reset if stats object is completely missing
+        if (!this.stats || typeof this.stats !== 'object') {
             this.setDefaultState();
+            return;
         }
 
-        // Update progress bars
-        const happinessBar = document.getElementById('happinessBar');
-        const hungerBar = document.getElementById('hungerBar');
-        const cleanlinessBar = document.getElementById('cleanlinessBar');
-        const healthBar = document.getElementById('healthBar');
-
-        happinessBar.style.width = `${this.happiness * 100}%`;
-        hungerBar.style.width = `${(1 - this.hunger) * 100}%`;
-        cleanlinessBar.style.width = `${this.cleanliness * 100}%`;
-        healthBar.style.width = `${this.health * 100}%`;
+        // Update all stat bars
+        Object.entries(this.stats).forEach(([stat, value]) => {
+            const bar = document.getElementById(`${stat}Bar`);
+            if (bar) {
+                bar.style.width = `${value * 100}%`;
+                bar.style.background = `linear-gradient(90deg, 
+                    ${value > 0.5 ? '#4CAF50' : '#ff9800'}, 
+                    ${value > 0.7 ? '#45a049' : '#f57c00'})`;
+            }
+        });
 
         // Update pet face and animation
         const petIcon = document.getElementById('petIcon');
-        this.getPetFace(); // This will update the animator state
+        this.getPetFace();
 
-        // Update icon class based on style
         petIcon.className = 'pet-icon';
         if (selectedStyle === 'emoji') {
             petIcon.classList.add('emoji-style');
@@ -358,42 +411,24 @@ class Pet {
         // Update status effects
         if (this.death_time) {
             petIcon.style.filter = 'grayscale(1)';
-        } else if (this.happiness < 0.3 || this.hunger > 0.8 || this.cleanliness < 0.2) {
+        } else if (this.stats.happiness < 0.3 || this.stats.hunger > 0.8 || this.stats.health < 0.3) {
             petIcon.style.filter = 'hue-rotate(180deg)';
-        } else if (this.happiness < 0.6 || this.hunger > 0.6 || this.cleanliness < 0.5) {
+        } else if (this.stats.happiness < 0.6 || this.stats.hunger > 0.6 || this.stats.health < 0.6) {
             petIcon.style.filter = 'hue-rotate(90deg)';
         } else {
             petIcon.style.filter = 'none';
         }
 
-        // Update progress bar colors
-        happinessBar.style.background = `linear-gradient(90deg, 
-            ${this.happiness > 0.5 ? '#4CAF50' : '#ff9800'}, 
-            ${this.happiness > 0.7 ? '#45a049' : '#f57c00'})`;
-        
-        hungerBar.style.background = `linear-gradient(90deg, 
-            ${this.hunger < 0.5 ? '#4CAF50' : '#ff9800'}, 
-            ${this.hunger < 0.3 ? '#45a049' : '#f57c00'})`;
-        
-        cleanlinessBar.style.background = `linear-gradient(90deg, 
-            ${this.cleanliness > 0.5 ? '#4CAF50' : '#ff9800'}, 
-            ${this.cleanliness > 0.7 ? '#45a049' : '#f57c00'})`;
-        
-        healthBar.style.background = `linear-gradient(90deg, 
-            ${this.health > 0.5 ? '#4CAF50' : '#ff9800'}, 
-            ${this.health > 0.7 ? '#45a049' : '#f57c00'})`;
-
-        // Update debug info if in dev mode
+        // Update debug info
         if (this.isDev) {
             document.getElementById('debugInfo').textContent = 
                 `Speed Multiplier: ${this.devSpeedMultiplier}x\n` +
                 `Pet Type: ${this.pet_type}\n` +
                 `Name: ${this.name}\n` +
-                `Happiness: ${this.happiness.toFixed(2)}\n` +
-                `Hunger: ${this.hunger.toFixed(2)}\n` +
-                `Cleanliness: ${this.cleanliness.toFixed(2)}\n` +
-                `Health: ${this.health.toFixed(2)}\n` +
-                `Death Time: ${this.death_time ? new Date(this.death_time).toLocaleString() : 'N/A'}`;
+                Object.entries(this.stats)
+                    .map(([stat, value]) => `${stat}: ${value.toFixed(2)}`)
+                    .join('\n') +
+                `\nDeath Time: ${this.death_time ? new Date(this.death_time).toLocaleString() : 'N/A'}`;
         }
     }
 }
@@ -408,7 +443,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Define the global functions
+function updatePreview() {
+    const previewIcon = document.getElementById('previewIcon');
+    if (!previewIcon) return;
+
+    // Clean up previous animator if it exists
+    if (previewAnimator) {
+        previewAnimator.cleanup();
+        previewAnimator = null;
+    }
+
+    if (!selectedPetType) {
+        previewIcon.textContent = '❓';
+        previewIcon.className = 'pet-icon preview-icon';
+        return;
+    }
+
+    // Update preview icon class based on style
+    previewIcon.className = `pet-icon preview-icon ${selectedStyle}-style`;
+    previewIcon.textContent = '';  // Clear content first
+    
+    if (selectedStyle === 'emoji') {
+        const emojis = {
+            cat: '😺',
+            dog: '🐶'
+        };
+        previewIcon.textContent = emojis[selectedPetType] || '❓';
+        return;
+    }
+
+    // Create new animator for preview
+    try {
+        previewAnimator = window.PetAnimatorFactory.create(selectedPetType, selectedStyle);
+        if (!previewAnimator) {
+            console.error('Failed to create preview animator');
+            previewIcon.textContent = '❓';
+            return;
+        }
+
+        // Set the container for the animator
+        previewAnimator.setContainer(previewIcon);
+
+        // Apply customizations if using SVG style
+        if (selectedStyle === 'svg') {
+            previewAnimator.setCustomizations({
+                color: document.getElementById('petColor').value || '#f0f0f0',
+                eyeColor: document.getElementById('eyeColor').value || '#000000',
+                mouthColor: document.getElementById('mouthColor').value || '#000000'
+            });
+        }
+
+        // Initialize the preview animation
+        previewAnimator.setState('idle');
+        previewAnimator.updateAnimation();
+
+        // Start animation loop for ASCII and SVG styles
+        if (selectedStyle === 'ascii' || selectedStyle === 'svg') {
+            if (window.previewAnimationInterval) {
+                clearInterval(window.previewAnimationInterval);
+            }
+            window.previewAnimationInterval = setInterval(() => {
+                if (previewAnimator) {
+                    previewAnimator.updateAnimation();
+                }
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Error in preview animation:', error);
+        previewIcon.textContent = '❓';
+    }
+}
+
 function selectPetType(type) {
     selectedPetType = type;
     document.querySelectorAll('.pet-option').forEach(option => {
@@ -421,6 +526,9 @@ function selectPetType(type) {
     // Show customization options only for SVG style
     const customizationOptions = document.querySelector('.customization-options');
     customizationOptions.style.display = selectedStyle === 'svg' ? 'block' : 'none';
+
+    // Update preview
+    updatePreview();
 }
 
 function createPet() {
@@ -478,6 +586,9 @@ function showPetSelection() {
     if (pet.animator) {
         pet.animator.cleanup();
     }
+    if (previewAnimator) {
+        previewAnimator.cleanup();
+    }
     pet.setDefaultState();
     selectedPetType = null;
     selectedStyle = 'emoji';
@@ -492,6 +603,7 @@ function showPetSelection() {
     document.getElementById('petSelection').style.display = 'flex';
     document.getElementById('deathScreen').style.display = 'none';
     document.getElementById('petContainer').style.display = 'none';
+    updatePreview();
     pet.saveState();
 }
 
@@ -503,8 +615,48 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedStyle = e.target.value;
             const customizationOptions = document.querySelector('.customization-options');
             customizationOptions.style.display = selectedStyle === 'svg' ? 'block' : 'none';
+            updatePreview();
         });
     });
+
+    // Add event listeners for color customization
+    ['petColor', 'eyeColor', 'mouthColor'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', updatePreview);
+        }
+    });
+
+    // Add event listener for pet termination
+    if (window.electron) {
+        window.electron.ipcRenderer.on('terminate-pet', () => {
+            if (confirm('Are you sure you want to give up your pet? Someone else will adopt them and give them a loving home.')) {
+                if (pet.animator) {
+                    pet.animator.cleanup();
+                }
+                if (previewAnimator) {
+                    previewAnimator.cleanup();
+                }
+                pet.setDefaultState();
+                selectedPetType = null;
+                selectedStyle = 'emoji';
+                document.getElementById('petName').value = '';
+                document.querySelectorAll('.pet-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                document.querySelectorAll('input[name="animStyle"]').forEach(radio => {
+                    radio.checked = radio.value === 'emoji';
+                });
+                document.querySelector('.customization-options').style.display = 'none';
+                document.getElementById('petSelection').style.display = 'flex';
+                document.getElementById('deathScreen').style.display = 'none';
+                document.getElementById('petContainer').style.display = 'none';
+                updatePreview();
+                pet.saveState();
+                alert('Your pet has found a new loving home! You can now adopt a new pet.');
+            }
+        });
+    }
 });
 
 // Expose functions to window object
