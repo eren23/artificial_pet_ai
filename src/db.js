@@ -21,11 +21,14 @@ class PetDB {
             this.db.exec(`
                 CREATE TABLE IF NOT EXISTS pet_state (
                     id INTEGER PRIMARY KEY,
+                    pet_type TEXT,
+                    name TEXT,
                     happiness REAL,
                     hunger REAL,
                     cleanliness REAL,
                     health REAL,
-                    last_updated INTEGER
+                    last_updated INTEGER,
+                    death_time INTEGER
                 )
             `);
 
@@ -33,8 +36,8 @@ class PetDB {
             const state = this.db.prepare('SELECT * FROM pet_state WHERE id = 1').get();
             if (!state) {
                 this.db.prepare(`
-                    INSERT INTO pet_state (id, happiness, hunger, cleanliness, health, last_updated)
-                    VALUES (1, 0.5, 0.5, 1.0, 1.0, ?)
+                    INSERT INTO pet_state (id, pet_type, name, happiness, hunger, cleanliness, health, last_updated, death_time)
+                    VALUES (1, NULL, NULL, 0.5, 0.5, 1.0, 1.0, ?, NULL)
                 `).run(Date.now());
             }
             console.log('Database initialized successfully');
@@ -47,9 +50,9 @@ class PetDB {
         try {
             this.db.prepare(`
                 UPDATE pet_state 
-                SET happiness = ?, hunger = ?, cleanliness = ?, health = ?, last_updated = ?
+                SET pet_type = ?, name = ?, happiness = ?, hunger = ?, cleanliness = ?, health = ?, last_updated = ?, death_time = ?
                 WHERE id = 1
-            `).run(state.happiness, state.hunger, state.cleanliness, state.health, Date.now());
+            `).run(state.pet_type, state.name, state.happiness, state.hunger, state.cleanliness, state.health, Date.now(), state.death_time);
             console.log('State saved successfully');
         } catch (error) {
             console.error('Error saving state:', error);
@@ -65,11 +68,14 @@ class PetDB {
             console.error('Error loading state:', error);
             // Return default state if loading fails
             return {
+                pet_type: null,
+                name: null,
                 happiness: 0.5,
                 hunger: 0.5,
                 cleanliness: 1.0,
                 health: 1.0,
-                last_updated: Date.now()
+                last_updated: Date.now(),
+                death_time: null
             };
         }
     }
