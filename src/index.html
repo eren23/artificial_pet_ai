@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virtual Pet</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #fff;
+            color: #333;
+        }
+        .pet-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .pet-icon {
+            font-size: 64px;
+            transition: color 0.3s;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="pet-container">
+        <div id="petIcon" class="pet-icon">🐱</div>
+        
+        <div style="width: 100%;">
+            <p>Happiness</p>
+            <div class="progress-bar">
+                <div id="happinessBar" class="progress-bar-fill"></div>
+            </div>
+            
+            <p>Hunger</p>
+            <div class="progress-bar">
+                <div id="hungerBar" class="progress-bar-fill"></div>
+            </div>
+            
+            <p>Cleanliness</p>
+            <div class="progress-bar">
+                <div id="cleanlinessBar" class="progress-bar-fill"></div>
+            </div>
+            
+            <p>Health</p>
+            <div class="progress-bar">
+                <div id="healthBar" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button onclick="pet.feed()">Feed</button>
+            <button onclick="pet.pet()">Pet</button>
+            <button onclick="pet.clean()">Clean</button>
+            <button onclick="pet.wash()">Wash</button>
+        </div>
+
+        <div id="devControls" style="display: none; width: 100%; margin-top: 20px;">
+            <div style="margin-bottom: 10px;">
+                <label>Speed Multiplier:</label>
+                <select onchange="pet.setDevSpeed(Number(this.value))" style="margin-left: 10px;">
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="5">5x</option>
+                    <option value="10">10x</option>
+                    <option value="20">20x</option>
+                    <option value="50">50x</option>
+                </select>
+            </div>
+            <pre id="debugInfo" style="font-size: 12px; background: #f0f0f0; padding: 10px; border-radius: 5px;"></pre>
+            <button onclick="window.close()" style="background: #ff4444;">Quit App</button>
+        </div>
+    </div>
+    <script>
+        // Show dev controls if in development mode
+        if (window.isDev) {
+            document.getElementById('devControls').style.display = 'block';
+        }
+    </script>
+    <script src="pet.js"></script>
+</body>
+</html> 
