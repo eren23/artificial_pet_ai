@@ -26,7 +26,7 @@ class Pet {
             feed: {
                 name: 'Feed',
                 effects: {
-                    hunger: -0.3,
+                    hunger: 0.3,
                     happiness: +0.1,
                     energy: +0.2
                 },
@@ -151,10 +151,17 @@ class Pet {
                 this.pet_type = state.pet_type;
                 this.name = state.name;
                 this.death_time = state.death_time;
+                this.animationStyle = state.animation_style || 'emoji';
+                this.customizations = state.customizations ? JSON.parse(state.customizations) : null;
+                this.created_at = state.created_at;
                 
-                // Load all stats from saved state or use defaults
+                // Load all stats from saved state
                 if (state.stats) {
-                    this.stats = state.stats;
+                    Object.keys(this.stats).forEach(stat => {
+                        if (typeof state.stats[stat] !== 'undefined') {
+                            this.stats[stat] = state.stats[stat];
+                        }
+                    });
                 }
                 
                 // Calculate stat decreases since last save
@@ -208,9 +215,11 @@ class Pet {
             await window.electron.ipcRenderer.invoke('save-state', {
                 pet_type: this.pet_type,
                 name: this.name,
-                stats: this.stats,
+                stats: { ...this.stats },  // Create a copy of stats
                 death_time: this.death_time,
-                last_updated: Date.now()
+                animation_style: this.animationStyle,
+                customizations: this.customizations ? JSON.stringify(this.customizations) : null,
+                created_at: this.created_at
             });
         } catch (error) {
             console.error('Error saving state:', error);
@@ -221,7 +230,23 @@ class Pet {
         document.getElementById('petSelection').style.display = 'none';
         document.getElementById('petContainer').style.display = 'flex';
         document.getElementById('deathScreen').style.display = 'none';
-        document.getElementById('petNameDisplay').textContent = this.name;
+        
+        // Create animator with saved style
+        if (this.pet_type) {
+            const petIcon = document.getElementById('petIcon');
+            petIcon.textContent = ''; // Clear any existing content
+            petIcon.className = `pet-icon ${this.animationStyle}-style`;
+            
+            this.animator = window.PetAnimatorFactory.create(this.pet_type, this.animationStyle);
+            if (this.animator) {
+                this.animator.setContainer(petIcon);
+                if (this.animationStyle === 'svg' && this.customizations) {
+                    this.animator.setCustomizations(this.customizations);
+                }
+            }
+        }
+        
+        this.updateUI();
         this.startDeathCheck();
     }
 
@@ -395,6 +420,16 @@ class Pet {
             return;
         }
 
+        // Update pet name and age
+        const petNameDisplay = document.getElementById('petNameDisplay');
+        if (petNameDisplay && this.name && this.created_at) {
+            const ageInDays = Math.floor((Date.now() - this.created_at) / (1000 * 60 * 60 * 24));
+            const ageText = ageInDays === 0 ? 'Born today' : 
+                          ageInDays === 1 ? '1 day old' : 
+                          `${ageInDays} days old`;
+            petNameDisplay.textContent = `${this.name} (${ageText})`;
+        }
+
         // Update all stat bars
         Object.entries(this.stats).forEach(([stat, value]) => {
             const bar = document.getElementById(`${stat}Bar`);
@@ -555,6 +590,23 @@ function createPet() {
     pet.pet_type = selectedPetType;
     pet.name = name;
     pet.animationStyle = selectedStyle;
+    pet.created_at = Date.now(); // Add creation timestamp
+    
+    // Store customizations if using SVG style
+    if (selectedStyle === 'svg') {
+        pet.customizations = {
+            color: document.getElementById('petColor').value,
+            eyeColor: document.getElementById('eyeColor').value,
+            mouthColor: document.getElementById('mouthColor').value,
+            noseColor: document.getElementById('noseColor').value,
+            innerEarColor: document.getElementById('innerEarColor').value,
+            whiskerColor: document.getElementById('whiskerColor').value,
+            patternColor: document.getElementById('patternColor').value,
+            eyeShape: document.getElementById('eyeShape').value,
+            patternStyle: document.getElementById('patternStyle').value,
+            patternOpacity: document.getElementById('patternOpacity').value / 100
+        };
+    }
     
     // Create animator with selected style using the exposed PetAnimator factory
     const animator = window.PetAnimatorFactory.create(selectedPetType, selectedStyle);
@@ -579,18 +631,7 @@ function createPet() {
     // Apply all customizations if using SVG style
     if (selectedStyle === 'svg') {
         try {
-            animator.setCustomizations({
-                color: document.getElementById('petColor').value,
-                eyeColor: document.getElementById('eyeColor').value,
-                mouthColor: document.getElementById('mouthColor').value,
-                noseColor: document.getElementById('noseColor').value,
-                innerEarColor: document.getElementById('innerEarColor').value,
-                whiskerColor: document.getElementById('whiskerColor').value,
-                patternColor: document.getElementById('patternColor').value,
-                eyeShape: document.getElementById('eyeShape').value,
-                patternStyle: document.getElementById('patternStyle').value,
-                patternOpacity: document.getElementById('patternOpacity').value / 100
-            });
+            animator.setCustomizations(pet.customizations);
         } catch (error) {
             console.error('Error setting customizations:', error);
         }

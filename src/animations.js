@@ -102,8 +102,8 @@ const SVG_TEMPLATES = {
                 <g class="face">
                     <!-- Eyes -->
                     <g class="eyes">
-                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
-                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="4" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="4" fill="var(--pet-eye-color)" />
                         <circle class="eye-shine" cx="38" cy="38" r="1.5" fill="#fff" />
                         <circle class="eye-shine" cx="58" cy="38" r="1.5" fill="#fff" />
                     </g>
@@ -251,8 +251,8 @@ const SVG_TEMPLATES = {
                 <g class="face">
                     <!-- Eyes -->
                     <g class="eyes">
-                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
-                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="var(--eye-height, 4)" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="40" cy="40" rx="4" ry="4" fill="var(--pet-eye-color)" />
+                        <ellipse class="eye" cx="60" cy="40" rx="4" ry="4" fill="var(--pet-eye-color)" />
                         <circle class="eye-shine" cx="38" cy="38" r="1.5" fill="#fff" />
                         <circle class="eye-shine" cx="58" cy="38" r="1.5" fill="#fff" />
                     </g>
@@ -520,6 +520,28 @@ class PetAnimator {
         container.style.setProperty('--pet-color', this.customizations.color);
         container.style.setProperty('--pet-eye-color', this.customizations.eyeColor);
         container.style.setProperty('--pet-mouth-color', this.customizations.mouthColor);
+        
+        // Update eye height based on state
+        const eyes = container.querySelectorAll('.eye');
+        let eyeHeight = 4; // default height
+        
+        switch (this.currentState) {
+            case 'sleeping':
+                eyeHeight = 1; // nearly closed eyes
+                break;
+            case 'happy':
+                eyeHeight = 3; // slightly squinted
+                break;
+            case 'sad':
+                eyeHeight = 5; // wide eyes
+                break;
+            default:
+                eyeHeight = 4; // normal eyes
+        }
+        
+        eyes.forEach(eye => {
+            eye.setAttribute('ry', eyeHeight);
+        });
         
         // Apply animation
         const body = container.querySelector('.pet-body');
