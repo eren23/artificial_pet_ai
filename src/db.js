@@ -28,7 +28,10 @@ class PetDB {
                     cleanliness REAL,
                     health REAL,
                     last_updated INTEGER,
-                    death_time INTEGER
+                    death_time INTEGER,
+                    animation_style TEXT,
+                    customizations TEXT,
+                    created_at INTEGER
                 )
             `);
 
@@ -36,8 +39,8 @@ class PetDB {
             const state = this.db.prepare('SELECT * FROM pet_state WHERE id = 1').get();
             if (!state) {
                 this.db.prepare(`
-                    INSERT INTO pet_state (id, pet_type, name, happiness, hunger, cleanliness, health, last_updated, death_time)
-                    VALUES (1, NULL, NULL, 0.5, 0.5, 1.0, 1.0, ?, NULL)
+                    INSERT INTO pet_state (id, pet_type, name, happiness, hunger, cleanliness, health, last_updated, death_time, animation_style, customizations, created_at)
+                    VALUES (1, NULL, NULL, 0.5, 0.5, 1.0, 1.0, ?, NULL, NULL, NULL, NULL)
                 `).run(Date.now());
             }
             console.log('Database initialized successfully');
@@ -50,9 +53,22 @@ class PetDB {
         try {
             this.db.prepare(`
                 UPDATE pet_state 
-                SET pet_type = ?, name = ?, happiness = ?, hunger = ?, cleanliness = ?, health = ?, last_updated = ?, death_time = ?
+                SET pet_type = ?, name = ?, happiness = ?, hunger = ?, cleanliness = ?, health = ?, 
+                    last_updated = ?, death_time = ?, animation_style = ?, customizations = ?, created_at = ?
                 WHERE id = 1
-            `).run(state.pet_type, state.name, state.happiness, state.hunger, state.cleanliness, state.health, Date.now(), state.death_time);
+            `).run(
+                state.pet_type, 
+                state.name, 
+                state.happiness, 
+                state.hunger, 
+                state.cleanliness, 
+                state.health, 
+                Date.now(), 
+                state.death_time,
+                state.animation_style,
+                state.customizations ? JSON.stringify(state.customizations) : null,
+                state.created_at
+            );
             console.log('State saved successfully');
         } catch (error) {
             console.error('Error saving state:', error);

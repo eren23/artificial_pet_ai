@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, nativeImage, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, Tray, nativeImage, ipcMain, Menu, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.DEVELOPMENT === 'true';
@@ -8,6 +8,76 @@ let window = null;
 let storePath = null;
 let trayContextMenu = null;
 
+// Create a default icon for the tray
+function createTrayIcon() {
+    try {
+        const iconPath = path.join(__dirname, 'assets', 'icon.png');
+        if (!fs.existsSync(iconPath)) {
+            console.error('Icon not found at:', iconPath);
+            return nativeImage.createEmpty();
+        }
+        
+        const icon = nativeImage.createFromPath(iconPath);
+        if (process.platform === 'darwin') {
+            icon.setTemplateImage(true);
+        }
+        return icon.resize({ width: 16, height: 16 });
+    } catch (error) {
+        console.error('Failed to load icon:', error);
+        return nativeImage.createEmpty();
+    }
+}
+
+// Refresh tray icon
+function refreshTrayIcon() {
+    if (tray && !tray.isDestroyed()) {
+        const icon = createTrayIcon();
+        tray.setImage(icon);
+    }
+}
+
+function initTray() {
+    try {
+        const icon = createTrayIcon();
+        tray = new Tray(icon);
+
+        // Create and store context menu
+        trayContextMenu = createTrayMenu();
+        tray.setContextMenu(trayContextMenu);
+
+        // Handle tray clicks
+        tray.on('click', (event, bounds) => {
+            const { x, y } = bounds;
+            const { height, width } = window.getBounds();
+            
+            if (window.isVisible()) {
+                window.hide();
+            } else {
+                // Position window near tray icon
+                const yPosition = process.platform === 'darwin' ? y : y - height;
+                window.setBounds({
+                    x: Math.round(x - width/2),
+                    y: Math.round(yPosition),
+                    width,
+                    height
+                });
+                window.show();
+                window.focus();
+            }
+        });
+
+        // Handle right click
+        tray.on('right-click', () => {
+            tray.popUpContextMenu(trayContextMenu);
+        });
+
+        // Ensure tray icon remains visible
+        tray.setIgnoreDoubleClickEvents(true);
+    } catch (error) {
+        console.error('Failed to initialize tray:', error);
+    }
+}
+
 // Simple file-based storage
 function initStorage() {
     try {
@@ -16,13 +86,59 @@ function initStorage() {
         
         if (!fs.existsSync(storePath)) {
             const initialState = {
-                happiness: 0.5,
-                hunger: 0.5,
-                cleanliness: 1.0,
-                health: 1.0,
+                pet_type: null,
+                name: null,
+                stats: {
+                    happiness: 0.5,
+                    hunger: 0.5,
+                    cleanliness: 1.0,
+                    health: 1.0,
+                    energy: 1.0,
+                    social: 0.5,
+                    exercise: 0.5
+                },
+                animation_style: 'emoji',
+                customizations: null,
+                created_at: null,
+                death_time: null,
                 last_updated: Date.now()
             };
-            fs.writeFileSync(storePath, JSON.stringify(initialState));
+            fs.writeFileSync(storePath, JSON.stringify(initialState, null, 2));
+        } else {
+            // Read existing state and ensure all required properties exist
+            try {
+                const currentState = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+                const defaultStats = {
+                    happiness: 0.5,
+                    hunger: 0.5,
+                    cleanliness: 1.0,
+                    health: 1.0,
+                    energy: 1.0,
+                    social: 0.5,
+                    exercise: 0.5
+                };
+
+                // Ensure stats object exists and has all required properties
+                if (!currentState.stats) {
+                    currentState.stats = defaultStats;
+                } else {
+                    // Add any missing stats with default values
+                    Object.keys(defaultStats).forEach(stat => {
+                        if (typeof currentState.stats[stat] === 'undefined') {
+                            currentState.stats[stat] = defaultStats[stat];
+                        }
+                    });
+                }
+
+                // Ensure other required properties exist
+                if (!currentState.animation_style) currentState.animation_style = 'emoji';
+                if (!currentState.last_updated) currentState.last_updated = Date.now();
+
+                // Save the updated state back to file
+                fs.writeFileSync(storePath, JSON.stringify(currentState, null, 2));
+            } catch (error) {
+                console.error('Error updating existing state:', error);
+            }
         }
         console.log('Storage initialized successfully');
     } catch (error) {
@@ -104,14 +220,7 @@ function createTrayMenu() {
 
 app.whenReady().then(() => {
     initStorage();
-    
-    // Create the tray icon
-    const icon = nativeImage.createFromNamedImage('NSImageNameStatusAvailable', [-1]);
-    tray = new Tray(icon);
-
-    // Create and store context menu
-    trayContextMenu = createTrayMenu();
-    tray.setContextMenu(trayContextMenu);
+    initTray();
 
     // Update menu status periodically
     setInterval(() => {
@@ -131,7 +240,7 @@ app.whenReady().then(() => {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: true,
-            devTools: true, // Enable DevTools
+            devTools: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
@@ -153,25 +262,13 @@ app.whenReady().then(() => {
         window.hide();
     });
 
-    // Handle tray clicks
-    tray.on('click', (event, bounds) => {
-        const { x, y } = bounds;
-        const { height, width } = window.getBounds();
-        
-        if (window.isVisible()) {
-            window.hide();
-        } else {
-            const yPosition = process.platform === 'darwin' ? y : y - height;
-            window.setBounds({
-                x: Math.round(x - width/2),
-                y: Math.round(yPosition),
-                width,
-                height
-            });
-            window.show();
-        }
-    });
+    // Handle display changes
+    screen.on('display-added', refreshTrayIcon);
+    screen.on('display-removed', refreshTrayIcon);
 });
+
+// Handle app activation
+app.on('activate', refreshTrayIcon);
 
 // Add keyboard shortcut to open DevTools
 app.on('web-contents-created', (e, contents) => {
@@ -200,7 +297,22 @@ ipcMain.handle('load-state', () => {
     try {
         if (fs.existsSync(storePath)) {
             const data = fs.readFileSync(storePath, 'utf8');
-            return JSON.parse(data);
+            const state = JSON.parse(data);
+            
+            // Ensure stats object exists
+            if (!state.stats) {
+                state.stats = {
+                    happiness: 0.5,
+                    hunger: 0.5,
+                    cleanliness: 1.0,
+                    health: 1.0,
+                    energy: 1.0,
+                    social: 0.5,
+                    exercise: 0.5
+                };
+            }
+            
+            return state;
         }
         return null;
     } catch (error) {
@@ -211,10 +323,16 @@ ipcMain.handle('load-state', () => {
 
 ipcMain.handle('save-state', (event, state) => {
     try {
-        fs.writeFileSync(storePath, JSON.stringify({
-            ...state,
-            last_updated: Date.now()
-        }));
+        // Ensure we're not overwriting with empty stats
+        if (!state.stats || Object.keys(state.stats).length === 0) {
+            const currentState = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+            state.stats = currentState.stats;
+        }
+        
+        // Update last_updated timestamp
+        state.last_updated = Date.now();
+        
+        fs.writeFileSync(storePath, JSON.stringify(state, null, 2));
         return true;
     } catch (error) {
         console.error('Error saving state:', error);
